@@ -1,0 +1,17 @@
+{
+  "name": "dj-ingrid-stats-correcciones",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "node impor-history/import-history.js",
+    "sync": "node sync-spotify.js",
+    "covers": "node enrich-metadata.js",
+    "auth": "node impor-history/spotify-auth.js",
+    "check": "node check-env.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "dotenv": "^18.0.4"
+  }
+}
