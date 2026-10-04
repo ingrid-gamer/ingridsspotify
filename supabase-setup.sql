@@ -83,7 +83,7 @@ FROM public.spotify_history_extended
 WHERE ms_played > 0
   AND BTRIM(track_name) <> '';
 
--- 5. TOP 10 CANCIONES - ÚLTIMOS 90 DÍAS
+-- 5. TOP 10 CANCIONES - ÚLTIMOS 30 DÍAS
 CREATE OR REPLACE VIEW public.view_top_tracks_recent
 WITH (security_invoker = false)
 AS
@@ -99,7 +99,7 @@ SELECT
     ) AS spotify_track_uri,
     COUNT(*)::INT AS veces_reproducidas
 FROM public.spotify_history_extended
-WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '90 days'
+WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
   AND ms_played > 0
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''
@@ -107,8 +107,11 @@ GROUP BY track_name, artist_name
 ORDER BY veces_reproducidas DESC, track_name ASC, artist_name ASC
 LIMIT 10;
 
--- 6. TOP 5 ÁLBUMES - ÚLTIMOS 90 DÍAS
-CREATE OR REPLACE VIEW public.view_top_albums_recent
+-- 6. TOP 5 ÁLBUMES - ÚLTIMOS 30 DÍAS
+-- Recrear la vista para añadir las URIs necesarias para resolver portadas.
+DROP VIEW IF EXISTS public.view_top_albums_recent;
+
+CREATE VIEW public.view_top_albums_recent
 WITH (security_invoker = false)
 AS
 SELECT
@@ -120,9 +123,12 @@ SELECT
     MAX(spotify_album_uri) FILTER (
         WHERE spotify_album_uri IS NOT NULL AND BTRIM(spotify_album_uri) <> ''
     ) AS spotify_album_uri,
+    MAX(spotify_track_uri) FILTER (
+        WHERE spotify_track_uri IS NOT NULL AND BTRIM(spotify_track_uri) <> ''
+    ) AS spotify_track_uri,
     COUNT(*)::INT AS veces_reproducidas
 FROM public.spotify_history_extended
-WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '90 days'
+WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
   AND ms_played > 0
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''

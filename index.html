@@ -13,7 +13,7 @@
             .stats-column { width: 100%; align-items: stretch; }
             .stat-pill { justify-content: flex-start; width: 100%; }
             .recent-row { align-items: flex-start; }
-            .recent-date { width: 88px; text-align: left; padding-top: 4px; }
+            .recent-time { width: 88px; text-align: left; padding-top: 4px; }
             .track-title-link { display: block; }
         }
     </style>
@@ -25,10 +25,10 @@
                 extend: {
                     colors: {
                         spotify: '#1DB954',
-                        darkBg: '#121212',
-                        cardBg: '#181818',
-                        cardHover: '#282828',
-                        lightText: '#B3B3B3'
+                        darkBg: '#FFFFFF',
+                        cardBg: '#F3F4F6',
+                        cardHover: '#E5E7EB',
+                        lightText: '#52525B'
                     }
                 }
             }
@@ -36,32 +36,30 @@
     </script>
 </head>
 
-<body class="bg-darkBg text-white font-sans antialiased min-h-screen pb-10">
+<body class="bg-white text-gray-900 font-sans antialiased min-h-screen pb-10">
     <header class="relative w-full">
-        <div class="w-full h-44 overflow-hidden bg-gray-900">
+        <div class="w-full h-44 overflow-hidden bg-gray-100">
             <img
-                src="https://i.pinimg.com/1200x/f1/e6/f3/f1e6f395ace79a32745e80285e057925.jpg"
+            src="https://i.pinimg.com/736x/d5/60/dd/d560dd8178128e00cbcf6ed0024433e3.jpg"
                 alt="Banner"
                 class="w-full h-full object-cover object-center"
             >
         </div>
 
         <div class="profile-row px-4 relative -mt-16 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-            <div class="w-28 h-28 rounded-full border-4 border-darkBg overflow-hidden bg-black z-10 shadow-xl">
+            <div class="w-28 h-28 rounded-full border-4 border-white overflow-hidden bg-gray-100 z-10 shadow-xl">
                 <img
-                    src="https://i.pinimg.com/736x/b4/c2/dc/b4c2dca91183a807b53d8020eb28d2de.jpg"
+                    src="https://instagram.fscl37-1.fna.fbcdn.net/v/t51.82787-19/775244991_18444052657121413_5031920588702801854_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=OTpMQvCh1VUQ7kNvwGw2gUM&_nc_oc=AdrxO_oiaXdNN0_klgQSDPSFefTIQrfiDj0yvtP4u7PzXZbPCFQD7Pw0AcVZZuc6vDQ&_nc_zt=24&_nc_ht=instagram.fscl37-1.fna&_nc_gid=r4vvuEMJPekLuhW98k91ZQ&_nc_ss=7b6a8&oh=00_AQPpynhTlH1th-2Unp3HUx46tlV08LJDtbm1Vl2XJBNUPw&oe=6AC6FB3A"
                     alt="Avatar de DJ Ingrid"
                     class="w-full h-full object-cover"
                 >
             </div>
 
             <div class="stats-column flex flex-col gap-2 mb-2 w-full sm:w-auto">
-                <div class="stat-pill bg-[#2a2a2a] rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-700">
-                    <span class="text-spotify">🎧</span>
-                    <span>Total reproducciones: <b id="stat-reproducciones">...</b></span>
+                <div class="stat-pill bg-gray-100 rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-200">
+                    <span>Reproducciones totales: <b id="stat-reproducciones">...</b></span>
                 </div>
-                <div class="stat-pill bg-[#2a2a2a] rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-700">
-                    <span class="text-blue-400">👥</span>
+                <div class="stat-pill bg-gray-100 rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-200">
                     <span>Total de artistas escuchados: <b id="stat-artistas">...</b></span>
                 </div>
             </div>
@@ -70,9 +68,13 @@
         <div class="px-4 mt-3">
             <h1 class="text-3xl font-extrabold flex items-center gap-2">
                 DJ Ingrid
-                <span class="text-purple-500 text-xl">✔</span>
+                <img
+                    src="https://i.pinimg.com/originals/57/08/51/57085130f85711c7ffd6aec6ea77b0ec.gif"
+                    alt=""
+                    class="w-7 h-7 object-contain"
+                >
             </h1>
-            <p class="text-lightText text-sm mt-1">Recopilación de escucha desde 2017</p>
+            <p class="text-lightText text-sm mt-1">Recopilación estadísticas spotify de DJPixula, desde el 2017.</p>
         </div>
     </header>
 
@@ -80,9 +82,8 @@
         <section>
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 mb-4">
                 <h2 class="text-lg font-bold flex items-center gap-2 uppercase">
-                    <span class="text-red-500">🕒</span> Recientemente escuchadas
+                    Recientemente escuchadas
                 </h2>
-                <span id="ultima-actualizacion" class="text-xs text-gray-500">Actualizando...</span>
             </div>
             <div id="container-recientes" class="flex flex-col gap-3">
                 <p class="text-sm text-gray-500">Cargando canciones recientes...</p>
@@ -91,19 +92,19 @@
 
         <section>
             <h2 class="text-lg font-bold mb-4 uppercase">
-                Top 10 Canciones <span class="text-xs text-gray-400 normal-case">(Últimos 90 días)</span>
+                Top 10 Canciones <span class="text-xs text-gray-400 normal-case">(Últimos 30 días)</span>
             </h2>
-            <div id="container-top-canciones-90" class="bg-cardBg rounded-xl p-2 border border-gray-800">
-                <p class="text-sm text-gray-500 p-2">Cargando top 90 días...</p>
+            <div id="container-top-canciones-90" class="bg-cardBg rounded-xl p-2 border border-gray-200">
+                <p class="text-sm text-gray-500 p-2">Cargando top 30 días...</p>
             </div>
         </section>
 
         <section>
             <h2 class="text-lg font-bold mb-4 uppercase">
-                Top 5 Álbumes <span class="text-xs text-gray-400 normal-case">(Últimos 90 días)</span>
+                Top 5 Álbumes <span class="text-xs text-gray-400 normal-case">(Últimos 30 días)</span>
             </h2>
-            <div id="container-top-albumes-90" class="bg-cardBg rounded-xl p-2 border border-gray-800">
-                <p class="text-sm text-gray-500 p-2">Cargando álbumes recientes...</p>
+            <div id="container-top-albumes-90" class="bg-cardBg rounded-xl p-2 border border-gray-200">
+                <p class="text-sm text-gray-500 p-2">Cargando álbumes de los últimos 30 días...</p>
             </div>
         </section>
 
@@ -111,7 +112,7 @@
             <h2 class="text-lg font-bold mb-4 uppercase">
                 Top 10 Canciones <span class="text-xs text-gray-400 normal-case">(Todos los tiempos)</span>
             </h2>
-            <div id="container-top-canciones-all" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+            <div id="container-top-canciones-all" class="bg-cardBg rounded-xl p-2 border border-gray-200">
                 <p class="text-sm text-gray-500 p-2">Cargando top histórico...</p>
             </div>
             <p class="text-xs text-gray-500 mt-2">Se muestran canciones con al menos 50 reproducciones acumuladas.</p>
@@ -121,7 +122,7 @@
             <h2 class="text-lg font-bold mb-4 uppercase">
                 Top 5 Álbumes <span class="text-xs text-gray-400 normal-case">(Todos los tiempos)</span>
             </h2>
-            <div id="container-top-albumes-all" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+            <div id="container-top-albumes-all" class="bg-cardBg rounded-xl p-2 border border-gray-200">
                 <p class="text-sm text-gray-500 p-2">Cargando álbumes históricos...</p>
             </div>
         </section>
@@ -134,8 +135,8 @@
         const DEFAULT_COVER =
             'https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A31BDF2?v=v2';
 
-        const CHILE_TIMEZONE = 'America/Santiago';
         const RECENT_REFRESH_MS = 10000;
+        const STATS_REFRESH_MS = 5 * 60 * 1000;
         const coverCache = new Map();
 
         function validateFrontendConfig() {
@@ -168,27 +169,25 @@
             return safeNumber(value).toLocaleString('es-CL');
         }
 
-        function formatChileDate(playedAt) {
+        function formatRelativeTime(playedAt) {
             if (!playedAt) return '';
 
             const date = new Date(playedAt);
             if (Number.isNaN(date.getTime())) return '';
 
-            const dateText = date.toLocaleDateString('es-CL', {
-                timeZone: CHILE_TIMEZONE,
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
+            const elapsedMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+            if (elapsedMinutes < 1) return 'hace menos de un minuto';
+            if (elapsedMinutes < 60) {
+                return `hace ${elapsedMinutes} ${elapsedMinutes === 1 ? 'minuto' : 'minutos'}`;
+            }
 
-            const timeText = date.toLocaleTimeString('es-CL', {
-                timeZone: CHILE_TIMEZONE,
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
+            const elapsedHours = Math.floor(elapsedMinutes / 60);
+            if (elapsedHours < 24) {
+                return `hace ${elapsedHours} ${elapsedHours === 1 ? 'hora' : 'horas'}`;
+            }
 
-            return `${dateText}, ${timeText}`;
+            const elapsedDays = Math.floor(elapsedHours / 24);
+            return `hace ${elapsedDays} ${elapsedDays === 1 ? 'día' : 'días'}`;
         }
 
         function getSpotifyUrl(value) {
@@ -197,18 +196,9 @@
 
             if (/^https?:\/\//i.test(trimmed)) return trimmed;
 
-            if (trimmed.startsWith('spotify:track:')) {
-                const id = trimmed.slice('spotify:track:'.length).trim();
-                return /^[A-Za-z0-9]+$/.test(id)
-                    ? `https://open.spotify.com/track/${id}`
-                    : '';
-            }
-
-            if (trimmed.startsWith('spotify:album:')) {
-                const id = trimmed.slice('spotify:album:'.length).trim();
-                return /^[A-Za-z0-9]+$/.test(id)
-                    ? `https://open.spotify.com/album/${id}`
-                    : '';
+            const spotifyUri = trimmed.match(/^spotify:(track|album):([A-Za-z0-9]+)$/i);
+            if (spotifyUri) {
+                return `https://open.spotify.com/${spotifyUri[1].toLowerCase()}/${spotifyUri[2]}`;
             }
 
             return '';
@@ -468,19 +458,19 @@
                 const albumName = row.album_name ? `${escapeHTML(row.album_name)}, ` : '';
                 const plays = showPlays ? formatNumber(row.veces_reproducidas) : '';
                 const link = spotifyLink(row.spotify_url || row.spotify_track_uri);
-                const dateText = formatChileDate(row.played_at);
+                const relativeTime = formatRelativeTime(row.played_at);
                 const imgId = `img-track-${containerId}-${index}`;
 
-                const left = dateText
-                    ? `<div class="recent-date text-xs text-gray-400 flex flex-col items-center justify-center w-28 text-center shrink-0"><span>${escapeHTML(dateText)}</span></div>`
+                const left = relativeTime
+                    ? `<div class="recent-time text-xs text-gray-500 flex flex-col items-center justify-center w-28 text-center shrink-0"><span>${escapeHTML(relativeTime)}</span></div>`
                     : `<div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">${index + 1}</div>`;
 
                 const titleHtml = link
-                    ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="track-title-link text-base font-bold text-white hover:text-spotify hover:underline truncate">${trackName}</a>`
-                    : `<h3 class="text-base font-bold text-white truncate">${trackName}</h3>`;
+                    ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="track-title-link text-base font-bold text-gray-900 underline decoration-spotify/60 underline-offset-2 hover:text-spotify truncate">${trackName}</a>`
+                    : `<h3 class="text-base font-bold text-gray-900 truncate">${trackName}</h3>`;
 
                 const playsHtml = showPlays
-                    ? `<div class="text-xs font-bold text-white mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-400 font-normal">plays</span></div>`
+                    ? `<div class="text-xs font-bold text-gray-900 mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-500 font-normal">plays</span></div>`
                     : '';
 
                 const cover = row.album_cover || DEFAULT_COVER;
@@ -497,7 +487,7 @@
                             id="${imgId}"
                             src="${escapeHTML(cover)}"
                             alt="Portada de ${trackName}"
-                            class="w-14 h-14 rounded bg-gray-800 object-cover flex-shrink-0"
+                            class="w-14 h-14 rounded bg-gray-200 object-cover flex-shrink-0"
                             loading="lazy"
                             onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
                         >
@@ -545,15 +535,15 @@
                     <div class="flex items-center gap-3 p-2 rounded-md hover:bg-cardHover transition-colors">
                         <div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">${index + 1}</div>
                         <div class="flex-1 min-w-0 flex flex-col text-right pr-1">
-                            <h3 class="text-base font-bold text-white truncate">${albumName}${yearHtml}</h3>
+                            <h3 class="text-base font-bold text-gray-900 truncate">${albumName}${yearHtml}</h3>
                             <p class="text-sm text-lightText truncate">${artistName}</p>
                         </div>
-                        <div class="text-xs font-bold text-white mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-400 font-normal">plays</span></div>
+                        <div class="text-xs font-bold text-gray-900 mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-500 font-normal">plays</span></div>
                         <img
                             id="${imgId}"
                             src="${escapeHTML(cover)}"
                             alt="Portada de ${albumName}"
-                            class="w-14 h-14 rounded bg-gray-800 object-cover flex-shrink-0"
+                            class="w-14 h-14 rounded bg-gray-200 object-cover flex-shrink-0"
                             loading="lazy"
                             onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
                         >
@@ -619,21 +609,6 @@
             });
         }
 
-        function setLastUpdate() {
-            const now = new Date();
-            document.getElementById('ultima-actualizacion').textContent =
-                `Última actualización: ${now.toLocaleString('es-CL', {
-                    timeZone: CHILE_TIMEZONE,
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                })}`;
-        }
-
         async function cargarRecientes() {
             const container = document.getElementById('container-recientes');
             const firstLoad = !container?.dataset.loaded;
@@ -644,7 +619,6 @@
 
                 renderTrackList('container-recientes', recientes, false);
                 if (container) container.dataset.loaded = 'true';
-                setLastUpdate();
             } catch (error) {
                 console.error('Error cargando reproducciones recientes:', error);
 
@@ -710,6 +684,7 @@
 
             // Los rankings se cargan aparte y no bloquean las recientes.
             cargarEstadisticas();
+            setInterval(cargarEstadisticas, STATS_REFRESH_MS);
 
             // La página revisa las últimas 20 cada 10 segundos.
             // La aparición real de una escucha nueva depende de cuándo Spotify/API

@@ -11,6 +11,8 @@ Este proyecto corrige la ruta de importación y la carga rápida de las últimas
 - El frontend deja de consultar `spotify_history` y consulta `view_recent_plays`.
 - Las 20 reproducciones recientes se cargan antes que los rankings.
 - Las recientes se vuelven a consultar cada 10 segundos.
+- Los rankings recientes usan una ventana móvil de 30 días y se refrescan cada 5 minutos.
+- La vista de álbumes expone URIs de Spotify para resolver portadas con Spotify oEmbed.
 - Las portadas existentes en Supabase se muestran inmediatamente; las APIs externas quedan como respaldo.
 - Los errores HTTP muestran el código y mensaje real en pantalla/terminal.
 - `spotify-auth.js` queda en ES modules para eliminar el warning de Node sobre `MODULE_TYPELESS_PACKAGE_JSON`.
@@ -28,6 +30,10 @@ Nunca pongas `SUPABASE_SERVICE_ROLE_KEY`, `SPOTIFY_CLIENT_SECRET` ni `SPOTIFY_RE
 ## 2. Supabase — ejecutar antes del importador
 
 En Supabase > SQL Editor ejecuta `supabase-setup.sql` completo.
+
+Si la base ya estaba configurada, vuelve a ejecutar el archivo completo para
+actualizar el periodo de los rankings a 30 días y recrear `view_top_albums_recent`
+con las URIs necesarias para recuperar las portadas.
 
 Esto elimina específicamente:
 
