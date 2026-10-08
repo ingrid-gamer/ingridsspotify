@@ -9,11 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media (max-width: 640px) {
-            .profile-row { align-items: flex-start; }
-            .stats-column { width: 100%; align-items: stretch; }
-            .stat-pill { justify-content: flex-start; width: 100%; }
-            .recent-row { align-items: flex-start; }
-            .recent-time { width: 88px; text-align: left; padding-top: 4px; }
+            .profile-row   { align-items: flex-start; }
+            .stats-column  { width: 100%; align-items: stretch; }
+            .stat-pill     { justify-content: flex-start; width: 100%; }
+            .recent-row    { align-items: flex-start; }
+            .recent-time   { width: 88px; text-align: left; padding-top: 4px; }
             .track-title-link { display: block; }
         }
     </style>
@@ -24,9 +24,9 @@
             theme: {
                 extend: {
                     colors: {
-                        spotify: '#1DB954',
-                        darkBg: '#FFFFFF',
-                        cardBg: '#F3F4F6',
+                        spotify:   '#1DB954',
+                        darkBg:    '#FFFFFF',
+                        cardBg:    '#F3F4F6',
                         cardHover: '#E5E7EB',
                         lightText: '#52525B'
                     }
@@ -37,10 +37,12 @@
 </head>
 
 <body class="bg-white text-gray-900 font-sans antialiased min-h-screen pb-10">
+
+    <!-- ─── Header ─────────────────────────────────────────────────────── -->
     <header class="relative w-full">
         <div class="w-full h-44 overflow-hidden bg-gray-100">
             <img
-            src="https://i.pinimg.com/736x/d5/60/dd/d560dd8178128e00cbcf6ed0024433e3.jpg"
+                src="https://i.pinimg.com/736x/d5/60/dd/d560dd8178128e00cbcf6ed0024433e3.jpg"
                 alt="Banner"
                 class="w-full h-full object-cover object-center"
             >
@@ -78,7 +80,9 @@
         </div>
     </header>
 
+    <!-- ─── Main ────────────────────────────────────────────────────────── -->
     <main class="px-4 mt-8 space-y-10 max-w-5xl mx-auto">
+
         <section>
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 mb-4">
                 <h2 class="text-lg font-bold flex items-center gap-2 uppercase">
@@ -126,479 +130,24 @@
                 <p class="text-sm text-gray-500 p-2">Cargando álbumes históricos...</p>
             </div>
         </section>
+
     </main>
 
-    <script>
-        const SUPABASE_URL = 'https://zbovgcnqoavnmlybkhfj.supabase.co';
-        const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpib3ZnY25xb2F2bm1seWJraGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzNDA1MTEsImV4cCI6MjEwNDkxNjUxMX0.BEoV7tFd4c6OKtvThJkTaHP5SKevOUnGBHCNtDbjSfE';
-
-        const DEFAULT_COVER =
-            'https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A31BDF2?v=v2';
-
-        const RECENT_REFRESH_MS = 10000;
-        const STATS_REFRESH_MS = 5 * 60 * 1000;
-        const coverCache = new Map();
-
-        function validateFrontendConfig() {
-            if (
-                !SUPABASE_URL.trim() ||
-                !SUPABASE_PUBLISHABLE_KEY.trim() ||
-                /^(TU_|YOUR_)/i.test(SUPABASE_PUBLISHABLE_KEY.trim())
-            ) {
-                throw new Error(
-                    'Configura SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY en index.html.'
-                );
-            }
-        }
-
-        function escapeHTML(value) {
-            return String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function safeNumber(value) {
-            const number = Number(value);
-            return Number.isFinite(number) ? number : 0;
-        }
-
-        function formatNumber(value) {
-            return safeNumber(value).toLocaleString('es-CL');
-        }
-
-        function formatRelativeTime(playedAt) {
-            if (!playedAt) return '';
-
-            const date = new Date(playedAt);
-            if (Number.isNaN(date.getTime())) return '';
-
-            const elapsedMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
-            if (elapsedMinutes < 1) return 'hace menos de un minuto';
-            if (elapsedMinutes < 60) {
-                return `hace ${elapsedMinutes} ${elapsedMinutes === 1 ? 'minuto' : 'minutos'}`;
-            }
-
-            const elapsedHours = Math.floor(elapsedMinutes / 60);
-            if (elapsedHours < 24) {
-                return `hace ${elapsedHours} ${elapsedHours === 1 ? 'hora' : 'horas'}`;
-            }
-
-            const elapsedDays = Math.floor(elapsedHours / 24);
-            return `hace ${elapsedDays} ${elapsedDays === 1 ? 'día' : 'días'}`;
-        }
-
-        function getSpotifyUrl(value) {
-            if (!value || typeof value !== 'string') return '';
-            const trimmed = value.trim();
-
-            if (/^https?:\/\//i.test(trimmed)) return trimmed;
-
-            const spotifyUri = trimmed.match(/^spotify:(track|album):([A-Za-z0-9]+)$/i);
-            if (spotifyUri) {
-                return `https://open.spotify.com/${spotifyUri[1].toLowerCase()}/${spotifyUri[2]}`;
-            }
-
-            return '';
-        }
-
-        function spotifyLink(uriOrUrl) {
-            return getSpotifyUrl(uriOrUrl);
-        }
-
-        async function fetchJson(url, options = {}, timeoutMs = 10000) {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    signal: controller.signal
-                });
-
-                const text = await response.text();
-                let body = {};
-
-                try {
-                    body = text ? JSON.parse(text) : {};
-                } catch {
-                    body = { raw: text };
-                }
-
-                if (!response.ok) {
-                    const detail =
-                        body?.message ||
-                        body?.details ||
-                        body?.hint ||
-                        body?.code ||
-                        body?.raw ||
-                        '';
-
-                    throw new Error(
-                        `HTTP ${response.status}${detail ? ` — ${detail}` : ''}`
-                    );
-                }
-
-                return body;
-            } finally {
-                clearTimeout(timeout);
-            }
-        }
-
-        function normalizeText(value) {
-            return String(value || '')
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, ' ')
-                .trim();
-        }
-
-        async function querySpotifyOEmbed(spotifyValue) {
-            const spotifyUrl = getSpotifyUrl(spotifyValue);
-            if (!spotifyUrl) return null;
-
-            try {
-                const data = await fetchJson(
-                    `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`,
-                    {},
-                    10000
-                );
-
-                if (!data?.thumbnail_url) return null;
-                return {
-                    cover: data.thumbnail_url,
-                    title: data.title || null
-                };
-            } catch (error) {
-                console.warn('Spotify oEmbed no respondió:', error);
-                return null;
-            }
-        }
-
-        async function queryItunesStrict(artist, titleOrAlbum, mode = 'song') {
-            if (!artist && !titleOrAlbum) return null;
-
-            try {
-                const query = encodeURIComponent(
-                    `${artist || ''} ${titleOrAlbum || ''}`.trim()
-                );
-
-                const entity = mode === 'album' ? 'album' : 'song';
-                const data = await fetchJson(
-                    `https://itunes.apple.com/search?term=${query}&entity=${entity}&limit=10&country=CL`,
-                    {},
-                    10000
-                );
-
-                const results = Array.isArray(data.results) ? data.results : [];
-                if (!results.length) return null;
-
-                const artistKey = normalizeText(artist);
-                const targetKey = normalizeText(titleOrAlbum);
-
-                const scored = results.map(item => {
-                    const itemArtist = normalizeText(item.artistName || '');
-                    const itemTitle = normalizeText(
-                        mode === 'album'
-                            ? (item.collectionName || '')
-                            : (item.trackName || '')
-                    );
-
-                    let score = 0;
-                    if (artistKey && itemArtist === artistKey) score += 10;
-                    else if (artistKey && (itemArtist.includes(artistKey) || artistKey.includes(itemArtist))) score += 4;
-
-                    if (targetKey && itemTitle === targetKey) score += 10;
-                    else if (targetKey && (itemTitle.includes(targetKey) || targetKey.includes(itemTitle))) score += 3;
-
-                    return { item, score };
-                }).sort((a, b) => b.score - a.score);
-
-                const best = scored[0];
-                if (!best || best.score < 14) return null;
-
-                const artwork = best.item.artworkUrl100;
-                return {
-                    cover: artwork ? artwork.replace('100x100bb', '600x600bb') : null,
-                    releaseYear: best.item.releaseDate
-                        ? String(best.item.releaseDate).slice(0, 4)
-                        : null
-                };
-            } catch (error) {
-                console.warn('iTunes no respondió:', error);
-                return null;
-            }
-        }
-
-        async function queryDeezerStrict(artist, title) {
-            if (!artist && !title) return null;
-
-            try {
-                const query = encodeURIComponent(`${artist || ''} ${title || ''}`.trim());
-                const data = await fetchJson(
-                    `https://corsproxy.io/?https://api.deezer.com/search?q=${query}&limit=10`,
-                    {},
-                    10000
-                );
-
-                const results = Array.isArray(data?.data) ? data.data : [];
-                const artistKey = normalizeText(artist);
-                const titleKey = normalizeText(title);
-
-                const scored = results.map(item => {
-                    const itemArtist = normalizeText(item?.artist?.name || '');
-                    const itemTitle = normalizeText(item?.title || '');
-                    let score = 0;
-
-                    if (itemArtist === artistKey) score += 10;
-                    else if (artistKey && itemArtist.includes(artistKey)) score += 4;
-
-                    if (itemTitle === titleKey) score += 10;
-                    else if (titleKey && itemTitle.includes(titleKey)) score += 3;
-
-                    return { item, score };
-                }).sort((a, b) => b.score - a.score);
-
-                const best = scored[0];
-                if (!best || best.score < 14) return null;
-
-                return best.item?.album?.cover_xl || best.item?.album?.cover_big || null;
-            } catch (error) {
-                console.warn('Deezer no respondió:', error);
-                return null;
-            }
-        }
-
-        async function fetchTrackMetadata(artistName, trackName, spotifyValue) {
-            const cacheKey = `track|||${normalizeText(artistName)}|||${normalizeText(trackName)}|||${normalizeText(spotifyValue)}`;
-            if (coverCache.has(cacheKey)) return coverCache.get(cacheKey);
-
-            const spotify = await querySpotifyOEmbed(spotifyValue);
-            if (spotify?.cover) {
-                const result = { cover: spotify.cover, releaseYear: null };
-                coverCache.set(cacheKey, result);
-                return result;
-            }
-
-            const itunes = await queryItunesStrict(artistName, trackName, 'song');
-            if (itunes?.cover) {
-                coverCache.set(cacheKey, itunes);
-                return itunes;
-            }
-
-            const deezer = await queryDeezerStrict(artistName, trackName);
-            if (deezer) {
-                const result = { cover: deezer, releaseYear: null };
-                coverCache.set(cacheKey, result);
-                return result;
-            }
-
-            const result = { cover: DEFAULT_COVER, releaseYear: null };
-            coverCache.set(cacheKey, result);
-            return result;
-        }
-
-        async function fetchAlbumMetadata(artistName, albumName, spotifyValue) {
-            const cacheKey = `album|||${normalizeText(artistName)}|||${normalizeText(albumName)}|||${normalizeText(spotifyValue)}`;
-            if (coverCache.has(cacheKey)) return coverCache.get(cacheKey);
-
-            const spotify = await querySpotifyOEmbed(spotifyValue);
-            if (spotify?.cover) {
-                const result = { cover: spotify.cover, releaseYear: null };
-                coverCache.set(cacheKey, result);
-
-                const itunesYear = await queryItunesStrict(artistName, albumName, 'album');
-                if (itunesYear?.releaseYear) result.releaseYear = itunesYear.releaseYear;
-
-                return result;
-            }
-
-            const itunes = await queryItunesStrict(artistName, albumName, 'album');
-            if (itunes?.cover) {
-                coverCache.set(cacheKey, itunes);
-                return itunes;
-            }
-
-            const result = { cover: DEFAULT_COVER, releaseYear: itunes?.releaseYear || null };
-            coverCache.set(cacheKey, result);
-            return result;
-        }
-
-        async function resolveCover(imgId, coverUrl, artistName, titleName, spotifyValue = '', isAlbum = false) {
-            const imgElement = document.getElementById(imgId);
-            if (!imgElement) return null;
-
-            const metadata = isAlbum
-                ? await fetchAlbumMetadata(artistName, titleName, spotifyValue)
-                : await fetchTrackMetadata(artistName, titleName, spotifyValue);
-
-            const currentImage = document.getElementById(imgId);
-            if (currentImage && metadata?.cover) currentImage.src = metadata.cover;
-
-            return metadata;
-        }
-
-        function renderTrackList(containerId, rows, showPlays = false) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            if (!Array.isArray(rows) || rows.length === 0) {
-                container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>';
-                return;
-            }
-
-            const html = rows.map((row, index) => {
-                const rawTrackName = row.track_name || 'Canción desconocida';
-                const rawArtistName = row.artist_name || 'Artista desconocido';
-                const trackName = escapeHTML(rawTrackName);
-                const artistName = escapeHTML(rawArtistName);
-                const albumName = row.album_name ? `${escapeHTML(row.album_name)}, ` : '';
-                const plays = showPlays ? formatNumber(row.veces_reproducidas) : '';
-                const link = spotifyLink(row.spotify_url || row.spotify_track_uri);
-                const relativeTime = formatRelativeTime(row.played_at);
-                const imgId = `img-track-${containerId}-${index}`;
-
-                const left = relativeTime
-                    ? `<div class="recent-time text-xs text-gray-500 flex flex-col items-center justify-center w-28 text-center shrink-0"><span>${escapeHTML(relativeTime)}</span></div>`
-                    : `<div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">${index + 1}</div>`;
-
-                const titleHtml = link
-                    ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="track-title-link text-base font-bold text-gray-900 underline decoration-spotify/60 underline-offset-2 hover:text-spotify truncate">${trackName}</a>`
-                    : `<h3 class="text-base font-bold text-gray-900 truncate">${trackName}</h3>`;
-
-                const playsHtml = showPlays
-                    ? `<div class="text-xs font-bold text-gray-900 mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-500 font-normal">plays</span></div>`
-                    : '';
-
-                const cover = row.album_cover || DEFAULT_COVER;
-
-                return `
-                    <div class="recent-row flex items-center gap-3 p-2 rounded-md hover:bg-cardHover transition-colors">
-                        ${left}
-                        <div class="flex-1 min-w-0 flex flex-col text-right pr-1">
-                            ${titleHtml}
-                            <p class="text-sm text-lightText truncate">${albumName}${artistName}</p>
-                        </div>
-                        ${playsHtml}
-                        <img
-                            id="${imgId}"
-                            src="${escapeHTML(cover)}"
-                            alt="Portada de ${trackName}"
-                            class="w-14 h-14 rounded bg-gray-200 object-cover flex-shrink-0"
-                            loading="lazy"
-                            onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
-                        >
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = html;
-
-            rows.forEach((row, index) => {
-                const imgId = `img-track-${containerId}-${index}`;
-                resolveCover(
-                    imgId,
-                    row.album_cover,
-                    row.artist_name,
-                    row.track_name,
-                    row.spotify_url || row.spotify_track_uri,
-                    false
-                );
-            });
-        }
-
-        function renderAlbumList(containerId, rows) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            if (!Array.isArray(rows) || rows.length === 0) {
-                container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>';
-                return;
-            }
-
-            const html = rows.map((row, index) => {
-                const rawAlbumName = row.album_name || 'Álbum desconocido';
-                const albumName = escapeHTML(rawAlbumName);
-                const artistName = escapeHTML(row.artist_name || 'Artista desconocido');
-                const plays = formatNumber(row.veces_reproducidas);
-                const visibleYear = row.album_year || row.release_year || row.year || '';
-                const yearHtml = /^(19|20)\d{2}$/.test(String(visibleYear))
-                    ? `<span id="year-album-${containerId}-${index}" class="text-gray-400 font-normal ml-1">(${escapeHTML(visibleYear)})</span>`
-                    : `<span id="year-album-${containerId}-${index}" class="text-gray-400 font-normal ml-1"></span>`;
-                const imgId = `img-album-${containerId}-${index}`;
-                const cover = row.album_cover || DEFAULT_COVER;
-
-                return `
-                    <div class="flex items-center gap-3 p-2 rounded-md hover:bg-cardHover transition-colors">
-                        <div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">${index + 1}</div>
-                        <div class="flex-1 min-w-0 flex flex-col text-right pr-1">
-                            <h3 class="text-base font-bold text-gray-900 truncate">${albumName}${yearHtml}</h3>
-                            <p class="text-sm text-lightText truncate">${artistName}</p>
-                        </div>
-                        <div class="text-xs font-bold text-gray-900 mr-1 whitespace-nowrap shrink-0">${plays} <span class="text-gray-500 font-normal">plays</span></div>
-                        <img
-                            id="${imgId}"
-                            src="${escapeHTML(cover)}"
-                            alt="Portada de ${albumName}"
-                            class="w-14 h-14 rounded bg-gray-200 object-cover flex-shrink-0"
-                            loading="lazy"
-                            onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
-                        >
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = html;
-
-            rows.forEach((row, index) => {
-                const imgId = `img-album-${containerId}-${index}`;
-                resolveCover(
-                    imgId,
-                    row.album_cover,
-                    row.artist_name,
-                    row.album_name,
-                    row.spotify_url || row.spotify_album_uri || row.spotify_track_uri || '',
-                    true
-                ).then(metadata => {
-                    const yearElement = document.getElementById(`year-album-${containerId}-${index}`);
-                    if (
-                        yearElement &&
-                        !yearElement.textContent.trim() &&
-                        metadata?.releaseYear &&
-                        /^(19|20)\d{2}$/.test(String(metadata.releaseYear))
-                    ) {
-                        yearElement.textContent = `(${metadata.releaseYear})`;
-                    }
-                });
-            });
-        }
-
-        async function queryView(viewName) {
-            validateFrontendConfig();
-
-            const endpoint = `${SUPABASE_URL}/rest/v1/${encodeURIComponent(viewName)}?select=*`;
-
-            const data = await fetchJson(
-                endpoint,
-                {
-                    method: 'GET',
-                    headers: {
-                        apikey: SUPABASE_PUBLISHABLE_KEY,
-                        Accept: 'application/json'
-                    },
-                    cache: 'no-store'
-                }
-            );
-
-            if (!Array.isArray(data)) {
-                throw new Error(`${viewName}: la respuesta no es una lista válida.`);
-            }
-
-            return data;
-        }
+    <!-- ─── App ─────────────────────────────────────────────────────────── -->
+    <script type="module">
+        import { queryView }       from './js/services/supabase.js';
+        import { renderTrackList } from './js/components/track-list.js';
+        import { renderAlbumList } from './js/components/album-list.js';
+        import { renderErrorMessage } from './js/components/error-message.js';
+        import { formatNumber }    from './js/utils/format.js';
+        import { safeNumber }      from './js/utils/format.js';
+        import { escapeHTML }      from './js/utils/security.js';
+
+        // ── Constantes de intervalo ──────────────────────────────────────
+        const RECENT_REFRESH_MS = 10_000;        // cada 10 segundos
+        const STATS_REFRESH_MS  =  5 * 60_000;  // cada 5 minutos
+
+        // ── Helpers ──────────────────────────────────────────────────────
 
         function sortRecentPlays(rows) {
             return [...rows].sort((a, b) => {
@@ -609,30 +158,40 @@
             });
         }
 
+        // ── Estado LOADING / SUCCESS / ERROR por sección ─────────────────
+
+        /**
+         * Carga las canciones recientes.
+         * Solo muestra el error en la primera carga; las actualizaciones
+         * periódicas fallan silenciosamente para no interrumpir la UI.
+         */
         async function cargarRecientes() {
             const container = document.getElementById('container-recientes');
             const firstLoad = !container?.dataset.loaded;
 
             try {
                 const recientesRaw = await queryView('view_recent_plays');
-                const recientes = sortRecentPlays(recientesRaw).slice(0, 20);
+                const recientes    = sortRecentPlays(recientesRaw).slice(0, 20);
 
                 renderTrackList('container-recientes', recientes, false);
                 if (container) container.dataset.loaded = 'true';
+
             } catch (error) {
                 console.error('Error cargando reproducciones recientes:', error);
 
                 if (firstLoad && container) {
-                    container.innerHTML = `
-                        <div class="bg-red-950/40 border border-red-800 rounded-lg p-4">
-                            <p class="text-sm text-red-300 font-semibold">No se pudieron cargar las reproducciones recientes.</p>
-                            <p class="text-xs text-red-400 mt-1">${escapeHTML(error.message)}</p>
-                        </div>
-                    `;
+                    container.innerHTML = renderErrorMessage(
+                        'No se pudieron cargar las reproducciones recientes.',
+                        error.message
+                    );
                 }
             }
         }
 
+        /**
+         * Carga todos los rankings en paralelo.
+         * Si alguna vista falla, muestra el error en su sección correspondiente.
+         */
         async function cargarEstadisticas() {
             try {
                 const [
@@ -656,41 +215,46 @@
                         formatNumber(stats[0].total_artistas);
                 }
 
-                renderTrackList('container-top-canciones-90', canciones90.slice(0, 10), true);
-                renderAlbumList('container-top-albumes-90', albumes90.slice(0, 5));
+                renderTrackList('container-top-canciones-90',  canciones90.slice(0, 10),  true);
+                renderAlbumList('container-top-albumes-90',    albumes90.slice(0, 5));
                 renderTrackList('container-top-canciones-all', cancionesAll.slice(0, 10), true);
-                renderAlbumList('container-top-albumes-all', albumesAll.slice(0, 5));
+                renderAlbumList('container-top-albumes-all',   albumesAll.slice(0, 5));
+
             } catch (error) {
                 console.error('Error al cargar estadísticas de Supabase:', error);
 
-                ['container-top-canciones-90','container-top-albumes-90','container-top-canciones-all','container-top-albumes-all']
-                    .forEach(id => {
-                        const container = document.getElementById(id);
-                        if (container) {
-                            container.innerHTML = `
-                                <div class="bg-red-950/40 border border-red-800 rounded-lg p-4">
-                                    <p class="text-sm text-red-300 font-semibold">No se pudieron cargar estas estadísticas.</p>
-                                    <p class="text-xs text-red-400 mt-1">${escapeHTML(error.message)}</p>
-                                </div>
-                            `;
-                        }
-                    });
+                const seccionesAfectadas = [
+                    'container-top-canciones-90',
+                    'container-top-albumes-90',
+                    'container-top-canciones-all',
+                    'container-top-albumes-all'
+                ];
+
+                seccionesAfectadas.forEach(id => {
+                    const container = document.getElementById(id);
+                    if (container) {
+                        container.innerHTML = renderErrorMessage(
+                            'No se pudieron cargar estas estadísticas.',
+                            error.message
+                        );
+                    }
+                });
             }
         }
 
+        // ── Inicio ───────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
-            // Las recientes siempre se solicitan primero.
+            // Las recientes siempre se solicitan primero
             await cargarRecientes();
 
-            // Los rankings se cargan aparte y no bloquean las recientes.
+            // Los rankings se cargan aparte y no bloquean las recientes
             cargarEstadisticas();
-            setInterval(cargarEstadisticas, STATS_REFRESH_MS);
 
-            // La página revisa las últimas 20 cada 10 segundos.
-            // La aparición real de una escucha nueva depende de cuándo Spotify/API
-            // haya puesto esa reproducción a disposición del sincronizador.
-            setInterval(cargarRecientes, RECENT_REFRESH_MS);
+            // Actualizaciones periódicas
+            setInterval(cargarEstadisticas, STATS_REFRESH_MS);
+            setInterval(cargarRecientes,    RECENT_REFRESH_MS);
         });
     </script>
+
 </body>
 </html>

@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - index.html
+      - js/**
       - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
@@ -29,6 +30,7 @@ jobs:
         run: |
           mkdir public
           cp index.html public/index.html
+          cp -r js public/js
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5

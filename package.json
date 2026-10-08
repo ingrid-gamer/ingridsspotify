@@ -1,17 +1,24 @@
 {
-  "name": "dj-ingrid-stats-correcciones",
+  "name": "dj-ingrid-stats",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "import": "node impor-history/import-history.js",
-    "sync": "node sync-spotify.js",
+    "start":  "node dev-server.js",
+    "sync":   "node sync-spotify.js",
+    "import": "node import-history/import-history.js",
     "covers": "node enrich-metadata.js",
-    "auth": "node impor-history/spotify-auth.js",
-    "check": "node check-env.js"
+    "auth":   "node import-history/spotify-auth.js",
+    "check":  "node check-env.js",
+    "test":   "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "lint":   "eslint ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^18.0.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^9.0.0"
   }
 }
