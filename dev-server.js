@@ -40,7 +40,11 @@ const server = createServer(async (request, response) => {
         }
 
         const relativePath = relative(projectRoot, filePath);
-        if (relativePath !== 'index.html' && !relativePath.startsWith(`js${sep}`)) {
+        if (
+            relativePath !== 'index.html' &&
+            !relativePath.startsWith(`js${sep}`) &&
+            !relativePath.startsWith(`assets${sep}`)
+        ) {
             response.writeHead(404);
             response.end('Not found');
             return;

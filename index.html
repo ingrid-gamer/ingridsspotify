@@ -17,24 +17,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media (max-width: 640px) {
-            .profile-row { align-items: flex-start; }
             .recent-row { align-items: flex-start; }
             .recent-time { width: 88px; text-align: left; padding-top: 4px; }
             .track-title-link { display: block; }
         }
+        .profile-summary {
+            align-self: flex-end;
+            text-align: right;
+        }
+        header .profile-month-stat {
+            width: fit-content;
+            max-width: 100%;
+            margin-left: auto;
+            border-left-color: #1db954;
+        }
+        .top-five-carousel {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+        }
+        .top-five-track {
+            display: flex;
+            flex: 1 1 auto;
+            gap: 0.75rem;
+            min-width: 0;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.125rem 0 0.75rem;
+            scrollbar-width: thin;
+        }
+        .top-five-track > * {
+            flex: 0 0 190px;
+            scroll-snap-align: start;
+        }
+        .top-five-arrow {
+            display: flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            border-radius: 9999px;
+            background: #fff;
+            color: #111827;
+            cursor: pointer;
+        }
+        .top-five-arrow:hover { background: #f3f4f6; }
+        .top-five-arrow:focus-visible { outline: 3px solid #1db954; outline-offset: 2px; }
+        .top-five-arrow svg { width: 1.25rem; height: 1.25rem; }
         @media (max-width: 639px) {
-            .album-carousel {
-                display: flex;
-                overflow-x: auto;
-                overscroll-behavior-x: contain;
-                scroll-snap-type: x mandatory;
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 0.5rem;
-            }
-            .album-carousel > * {
-                flex: 0 0 78%;
-                scroll-snap-align: start;
-            }
+            .top-five-arrow { display: none; }
+            .top-five-track > * { flex-basis: 82%; }
         }
         .stats-accordion {
             overflow: hidden;
@@ -124,6 +162,7 @@
             .stats-accordion-trigger,
             .stats-accordion-chevron,
             .stats-accordion-panel { transition-duration: 0.01ms; }
+            .top-five-track { scroll-behavior: auto; }
             .stats-loading-spinner { animation-duration: 1.5s; }
         }
     </style>
@@ -133,29 +172,23 @@
         <div class="w-full h-44 overflow-hidden bg-gray-100">
             <img src="https://i.pinimg.com/736x/d5/60/dd/d560dd8178128e00cbcf6ed0024433e3.jpg" alt="Banner" class="w-full h-full object-cover object-center">
         </div>
-        <div class="profile-row px-4 relative -mt-16 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div class="profile-row px-4 relative -mt-16 flex flex-row items-end gap-4 max-w-5xl mx-auto">
             <div class="relative w-28 h-28 shrink-0 rounded-full border-4 border-white overflow-hidden bg-gray-100 z-10 shadow-xl">
                 <img id="profile-avatar" src="assets/dj-ingrid-profile.jpg" alt="Foto de DJ Ingrid" class="w-full h-full object-cover">
+            </div>
+            <div class="profile-summary min-w-0 flex-1 flex flex-wrap items-baseline justify-end gap-x-2 pb-2 text-xs sm:text-sm text-gray-600">
+                <p><span id="stat-reproducciones" class="font-extrabold text-gray-900">...</span> reproducciones totales</p>
+                <span aria-hidden="true" class="text-gray-400">·</span>
+                <p><span id="stat-artistas" class="font-extrabold text-gray-900">...</span> artistas escuchados</p>
             </div>
         </div>
         <div class="px-4 mt-3 max-w-5xl mx-auto">
             <h1 class="text-3xl font-extrabold flex items-center gap-2">DJ Ingrid <img src="https://i.pinimg.com/originals/57/08/51/57085130f85711c7ffd6aec6ea77b0ec.gif" alt="" class="w-7 h-7 object-contain"></h1>
-            <p class="text-lightText text-sm mt-1">Recopilación de estadísticas de Spotify de DJPixula desde 2017.
-                9 años de música para terminar escuchando puras weas
+            <p class="text-lightText text-sm mt-1">Recopilación de estadísticas de Spotify de DJPixula desde 2017, 9 años de música para terminar escuchando puras weas
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-5">
-                <div class="bg-gray-50 border border-gray-200 border-l-4 border-l-spotify rounded-lg px-4 py-3 shadow-sm">
-                    <p class="text-xs font-semibold uppercase text-gray-500">Reproducciones totales</p>
-                    <p id="stat-reproducciones" class="text-2xl font-extrabold text-gray-900 mt-1">...</p>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 border-l-4 border-l-gray-400 rounded-lg px-4 py-3 shadow-sm">
-                    <p class="text-xs font-semibold uppercase text-gray-500">Artistas escuchados</p>
-                    <p id="stat-artistas" class="text-2xl font-extrabold text-gray-900 mt-1">...</p>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 border-l-4 border-l-gray-400 rounded-lg px-4 py-3 shadow-sm">
-                    <p class="text-xs font-semibold uppercase text-gray-500">Reproducciones del último mes</p>
-                    <p id="stat-reproducciones-mes" class="text-2xl font-extrabold text-gray-900 mt-1">...</p>
-                </div>
+            <div class="profile-month-stat bg-green-50 border border-green-200 border-l-4 border-l-spotify rounded-lg px-4 py-3 shadow-sm mt-3">
+                <p class="text-xs font-semibold uppercase text-gray-500">Reproducciones del último mes</p>
+                <p id="stat-reproducciones-mes" class="text-lg font-bold text-gray-900 mt-1">...</p>
             </div>
         </div>
     </header>
@@ -185,7 +218,11 @@
                 </button>
             </h2>
             <div id="panel-top-albumes-90" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-albumes-90" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div class="top-five-carousel">
+                    <button class="top-five-arrow" type="button" data-carousel-direction="-1" aria-label="Ver elementos anteriores" aria-controls="container-top-albumes-90"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                    <div id="container-top-albumes-90" class="top-five-track"></div>
+                    <button class="top-five-arrow" type="button" data-carousel-direction="1" aria-label="Ver más elementos" aria-controls="container-top-albumes-90"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                </div></div>
             </div>
         </section>
         <section class="stats-accordion">
@@ -196,7 +233,11 @@
                 </button>
             </h2>
             <div id="panel-top-artistas-year" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-artistas-year" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div class="top-five-carousel">
+                    <button class="top-five-arrow" type="button" data-carousel-direction="-1" aria-label="Ver elementos anteriores" aria-controls="container-top-artistas-year"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                    <div id="container-top-artistas-year" class="top-five-track"></div>
+                    <button class="top-five-arrow" type="button" data-carousel-direction="1" aria-label="Ver más elementos" aria-controls="container-top-artistas-year"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                </div></div>
             </div>
         </section>
         <section class="stats-accordion">
@@ -218,7 +259,11 @@
                 </button>
             </h2>
             <div id="panel-top-albumes-all" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-albumes-all" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div class="top-five-carousel">
+                    <button class="top-five-arrow" type="button" data-carousel-direction="-1" aria-label="Ver elementos anteriores" aria-controls="container-top-albumes-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                    <div id="container-top-albumes-all" class="top-five-track"></div>
+                    <button class="top-five-arrow" type="button" data-carousel-direction="1" aria-label="Ver más elementos" aria-controls="container-top-albumes-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                </div></div>
             </div>
         </section>
         <section class="stats-accordion">
@@ -229,7 +274,11 @@
                 </button>
             </h2>
             <div id="panel-top-artistas-all" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-artistas-all" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div class="top-five-carousel">
+                    <button class="top-five-arrow" type="button" data-carousel-direction="-1" aria-label="Ver elementos anteriores" aria-controls="container-top-artistas-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                    <div id="container-top-artistas-all" class="top-five-track"></div>
+                    <button class="top-five-arrow" type="button" data-carousel-direction="1" aria-label="Ver más elementos" aria-controls="container-top-artistas-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18-6-6 6-6"/></svg></button>
+                </div></div>
             </div>
         </section>
     </main>
@@ -662,6 +711,16 @@ function initStatsAccordions() {
             panel.inert = !shouldOpen;
             if (shouldOpen) loadStatsSection(section);
         });
+
+        for (const arrow of document.querySelectorAll(`.top-five-arrow[aria-controls="${section.containerId}"]`)) {
+            arrow.addEventListener('click', () => {
+                const direction = Number(arrow.dataset.carouselDirection);
+                container.scrollBy({
+                    left: direction * container.clientWidth * 0.8,
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                });
+            });
+        }
 
         container.addEventListener('click', event => {
             const retryButton = event.target.closest?.('[data-retry-section]');
