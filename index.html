@@ -199,7 +199,7 @@
 const SUPABASE_URL = 'https://zbovgcnqoavnmlybkhfj.supabase.co';
 const DEFAULT_COVER = 'https://placehold.co/600x600/181818/FFFFFF?text=Sin+portada';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_fQCiU8IUCf3PpfzVWiHQSg_qN7y_4Ra';
-const RECENT_REFRESH_MS = 10000;
+const RECENT_REFRESH_MS = 60000;
 const STATS_REFRESH_MS = 5 * 60 * 1000;
 const coverCache = new Map();
 
@@ -344,6 +344,25 @@ function imageAttributes(id, cover, artist, title, spotifyValue, isAlbum) {
     return `id="${escapeHTML(id)}" src="${escapeHTML(usableCover)}" data-saved-cover="${escapeHTML(usableCover)}" data-artist="${escapeHTML(artist || '')}" data-title="${escapeHTML(title || '')}" data-spotify="${escapeHTML(spotifyValue || '')}" data-kind="${isAlbum ? 'album' : 'track'}" alt="Portada" onerror="handleCoverError(this)"`;
 }
 function renderTrackList(containerId, rows, showPlays = false) {
+    const excludedTracks = [
+        ["Imosia", "Nobel Cortex, BCCO"],
+        ["That's Right", "Bailey Ibbs"],
+        ["Climax", "DJ Dextro"],
+        ["Prophat Tool Board", "Glaskin"],
+        ["Mint Gummies", "Ikari"],
+        ["Echo", "Lars Huismann"],
+        ["Sounds from the Past I", "Lars Huismann"],
+        ["Oxytocin", "Disguised"],
+        ["Template", "Paul Laurens"]
+    ];
+
+    rows = Array.isArray(rows)
+        ? rows.filter(song => !excludedTracks.some(([track, artist]) =>
+            (song.track_name || "").trim().toLowerCase() === track.toLowerCase() &&
+            (song.artist_name || "").trim().toLowerCase() === artist.toLowerCase()
+        ))
+        : rows;
+
     const container = document.getElementById(containerId);
     if (!container) return;
     if (!Array.isArray(rows) || rows.length === 0) { container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>'; return; }
@@ -407,28 +426,28 @@ async function queryView(viewName) {
 const statsSections = [
     {
         id: 'top-canciones-90',
-        view: 'view_top_tracks_recent',
+        view: 'mv_top_tracks_recent',
         containerId: 'container-top-canciones-90',
         limit: 10,
         render: rows => renderTrackList('container-top-canciones-90', rows, true)
     },
     {
         id: 'top-albumes-90',
-        view: 'view_top_albums_recent',
+        view: 'mv_top_albums_recent',
         containerId: 'container-top-albumes-90',
         limit: 5,
         render: rows => renderAlbumList('container-top-albumes-90', rows)
     },
     {
         id: 'top-canciones-all',
-        view: 'view_top_tracks_all_time',
+        view: 'mv_top_tracks_all_time',
         containerId: 'container-top-canciones-all',
         limit: 10,
         render: rows => renderTrackList('container-top-canciones-all', rows, true)
     },
     {
         id: 'top-albumes-all',
-        view: 'view_top_albums_all_time',
+        view: 'mv_top_albums_all_time',
         containerId: 'container-top-albumes-all',
         limit: 5,
         render: rows => renderAlbumList('container-top-albumes-all', rows)
