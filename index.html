@@ -22,6 +22,20 @@
             .recent-time { width: 88px; text-align: left; padding-top: 4px; }
             .track-title-link { display: block; }
         }
+        @media (max-width: 639px) {
+            .album-carousel {
+                display: flex;
+                overflow-x: auto;
+                overscroll-behavior-x: contain;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 0.5rem;
+            }
+            .album-carousel > * {
+                flex: 0 0 78%;
+                scroll-snap-align: start;
+            }
+        }
         .stats-accordion {
             overflow: hidden;
             border: 1px solid #e5e7eb;
@@ -151,7 +165,7 @@
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-canciones-90" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-canciones-90">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Últimos 30 días</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">El último mes</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
@@ -162,12 +176,12 @@
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-albumes-90" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-albumes-90">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Últimos 30 días</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">El último mes</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
             <div id="panel-top-albumes-90" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-albumes-90" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div id="container-top-albumes-90" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
             </div>
         </section>
         <section class="stats-accordion">
@@ -189,7 +203,7 @@
                 </button>
             </h2>
             <div id="panel-top-albumes-all" class="stats-accordion-panel" data-open="false" aria-hidden="true" inert>
-                <div class="stats-accordion-inner"><div id="container-top-albumes-all" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
+                <div class="stats-accordion-inner"><div id="container-top-albumes-all" class="album-carousel grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div></div>
             </div>
         </section>
     </main>
