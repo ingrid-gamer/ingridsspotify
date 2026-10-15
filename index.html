@@ -44,7 +44,7 @@
             text-align: left;
             transition: background-color 180ms ease, box-shadow 180ms ease;
         }
-        .stats-accordion-trigger:hover { background: #242424; }
+        .stats-accordion-trigger:hover { background: #e5e7eb; }
         .stats-accordion-trigger:focus-visible {
             position: relative;
             z-index: 1;
@@ -54,6 +54,7 @@
         .stats-accordion-trigger[aria-expanded="true"] {
             box-shadow: inset 4px 0 #1db954;
         }
+        .stats-accordion-trigger .stats-accordion-subtitle { color: #6b7280; }
         .stats-accordion-chevron {
             width: 1.25rem;
             height: 1.25rem;
@@ -87,6 +88,20 @@
             border-radius: 50%;
             animation: stats-spin 700ms linear infinite;
         }
+        .recent-more-button {
+            min-height: 44px;
+            border: 1px solid #d1d5db;
+            border-radius: 9999px;
+            background: #f3f4f6;
+            padding: 0.625rem 1.25rem;
+            color: #111827;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: background-color 180ms ease, border-color 180ms ease;
+        }
+        .recent-more-button:hover { background: #e5e7eb; border-color: #9ca3af; }
+        .recent-more-button:focus-visible { outline: 3px solid #1db954; outline-offset: 2px; }
+        .recent-more-button[hidden] { display: none; }
         @keyframes stats-spin { to { transform: rotate(360deg); } }
         @media (prefers-reduced-motion: reduce) {
             .stats-accordion-trigger,
@@ -128,11 +143,12 @@
         <section>
             <h2 class="text-lg font-bold flex items-center gap-2 uppercase mb-4">Recientemente escuchadas</h2>
             <div id="container-recientes" class="flex flex-col gap-3"><p class="text-sm text-gray-500">Cargando canciones recientes...</p></div>
+            <button id="toggle-recientes" class="recent-more-button mt-4" type="button" aria-expanded="false" aria-controls="container-recientes" hidden>Ver 10 más</button>
         </section>
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-canciones-90" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-canciones-90">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="block text-sm text-gray-300 normal-case mt-1">Últimos 30 días</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Últimos 30 días</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
@@ -143,7 +159,7 @@
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-albumes-90" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-albumes-90">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="block text-sm text-gray-300 normal-case mt-1">Últimos 30 días</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Últimos 30 días</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
@@ -154,7 +170,7 @@
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-canciones-all" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-canciones-all">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="block text-sm text-gray-300 normal-case mt-1">Todos los tiempos</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 10 canciones</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Todos los tiempos</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
@@ -165,7 +181,7 @@
         <section class="stats-accordion">
             <h2>
                 <button id="toggle-top-albumes-all" class="stats-accordion-trigger" type="button" aria-expanded="false" aria-controls="panel-top-albumes-all">
-                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="block text-sm text-gray-300 normal-case mt-1">Todos los tiempos</span></span>
+                    <span><span class="block text-base sm:text-lg font-bold uppercase">Top 5 álbumes</span><span class="stats-accordion-subtitle block text-sm normal-case mt-1">Todos los tiempos</span></span>
                     <svg class="stats-accordion-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
             </h2>
@@ -500,12 +516,34 @@ function sortRecentPlays(rows) {
         return safeNumber(b.id) - safeNumber(a.id);
     });
 }
+const RECENT_INITIAL_COUNT = 5;
+const RECENT_MORE_COUNT = 10;
+let recentRows = [];
+let recentRowsFingerprint = null;
+let recentVisibleCount = RECENT_INITIAL_COUNT;
+function renderRecentRows() {
+    renderTrackList('container-recientes', recentRows.slice(0, recentVisibleCount), false);
+    const button = document.getElementById('toggle-recientes');
+    if (!button) return;
+    const remainingCount = Math.max(0, recentRows.length - RECENT_INITIAL_COUNT);
+    button.hidden = remainingCount === 0;
+    const expanded = recentVisibleCount > RECENT_INITIAL_COUNT;
+    button.setAttribute('aria-expanded', String(expanded));
+    button.textContent = expanded
+        ? 'Mostrar solo las 5 más recientes'
+        : `Ver ${Math.min(RECENT_MORE_COUNT, remainingCount)} más`;
+}
 async function cargarRecientes() {
     const container = document.getElementById('container-recientes');
     const firstLoad = !container?.dataset.loaded;
     try {
-        const rows = sortRecentPlays(await queryView('view_recent_plays')).slice(0,20);
-        renderTrackList('container-recientes', rows, false);
+        const rows = sortRecentPlays(await queryView('view_recent_plays')).slice(0, RECENT_INITIAL_COUNT + RECENT_MORE_COUNT);
+        const fingerprint = JSON.stringify(rows);
+        recentRows = rows;
+        if (fingerprint !== recentRowsFingerprint) {
+            recentRowsFingerprint = fingerprint;
+            renderRecentRows();
+        }
         if (container) container.dataset.loaded = 'true';
     } catch (error) {
         console.error('Error cargando reproducciones recientes:', error);
@@ -526,6 +564,12 @@ async function cargarEstadisticas() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     initStatsAccordions();
+    document.getElementById('toggle-recientes')?.addEventListener('click', () => {
+        recentVisibleCount = recentVisibleCount > RECENT_INITIAL_COUNT
+            ? RECENT_INITIAL_COUNT
+            : Math.min(RECENT_INITIAL_COUNT + RECENT_MORE_COUNT, recentRows.length);
+        renderRecentRows();
+    });
     await cargarRecientes();
     cargarEstadisticas();
     setInterval(() => {
