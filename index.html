@@ -89,10 +89,13 @@
             animation: stats-spin 700ms linear infinite;
         }
         .recent-more-button {
+            display: block;
             min-height: 44px;
             border: 1px solid #d1d5db;
             border-radius: 9999px;
             background: #f3f4f6;
+            margin-left: auto;
+            margin-right: auto;
             padding: 0.625rem 1.25rem;
             color: #111827;
             font-size: 0.875rem;
@@ -143,7 +146,7 @@
         <section>
             <h2 class="text-lg font-bold flex items-center gap-2 uppercase mb-4">Recientemente escuchadas</h2>
             <div id="container-recientes" class="flex flex-col gap-3"><p class="text-sm text-gray-500">Cargando canciones recientes...</p></div>
-            <button id="toggle-recientes" class="recent-more-button mt-4" type="button" aria-expanded="false" aria-controls="container-recientes" hidden>Ver 10 más</button>
+            <button id="toggle-recientes" class="recent-more-button mt-4" type="button" aria-expanded="false" aria-controls="container-recientes" hidden>ver más</button>
         </section>
         <section class="stats-accordion">
             <h2>
@@ -529,9 +532,7 @@ function renderRecentRows() {
     button.hidden = remainingCount === 0;
     const expanded = recentVisibleCount > RECENT_INITIAL_COUNT;
     button.setAttribute('aria-expanded', String(expanded));
-    button.textContent = expanded
-        ? 'Mostrar solo las 5 más recientes'
-        : `Ver ${Math.min(RECENT_MORE_COUNT, remainingCount)} más`;
+    button.textContent = expanded ? 'ver menos' : 'ver más';
 }
 async function cargarRecientes() {
     const container = document.getElementById('container-recientes');
