@@ -204,15 +204,86 @@ WHERE ms_played > 0
 ORDER BY played_at DESC, id DESC
 LIMIT 20;
 
--- 10. SOLO LAS VISTAS NECESARIAS SON PÚBLICAS
+-- 10. TOP 5 ARTISTAS DEL MES CALENDARIO ACTUAL
+CREATE OR REPLACE VIEW public.view_top_artists_month
+WITH (security_invoker = false)
+AS
+SELECT
+    (ARRAY_AGG(BTRIM(artist_name) ORDER BY played_at DESC, id DESC))[1] AS artist_name,
+    COUNT(*)::INT AS veces_reproducidas
+FROM public.spotify_history_extended
+WHERE played_at >= (
+        DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')
+        AT TIME ZONE 'America/Santiago'
+    )
+  AND played_at <= CURRENT_TIMESTAMP
+  AND ms_played > 0
+  AND BTRIM(track_name) <> ''
+  AND BTRIM(artist_name) <> ''
+GROUP BY LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g'))
+ORDER BY COUNT(*) DESC, LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g')) ASC
+LIMIT 5;
+
+-- TOP 5 ARTISTAS DEL AÑO CALENDARIO ACTUAL
+CREATE OR REPLACE VIEW public.view_top_artists_year
+WITH (security_invoker = false)
+AS
+SELECT
+    (ARRAY_AGG(BTRIM(artist_name) ORDER BY played_at DESC, id DESC))[1] AS artist_name,
+    COUNT(*)::INT AS veces_reproducidas
+FROM public.spotify_history_extended
+WHERE played_at >= (
+        DATE_TRUNC('year', CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')
+        AT TIME ZONE 'America/Santiago'
+    )
+  AND played_at <= CURRENT_TIMESTAMP
+  AND ms_played > 0
+  AND BTRIM(track_name) <> ''
+  AND BTRIM(artist_name) <> ''
+GROUP BY LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g'))
+ORDER BY COUNT(*) DESC, LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g')) ASC
+LIMIT 5;
+
+-- TOP 5 ARTISTAS MÁS ESCUCHADOS DE TODOS LOS TIEMPOS
+CREATE OR REPLACE VIEW public.view_top_artists_all_time
+WITH (security_invoker = false)
+AS
+SELECT
+    (ARRAY_AGG(BTRIM(artist_name) ORDER BY played_at DESC, id DESC))[1] AS artist_name,
+    COUNT(*)::INT AS veces_reproducidas
+FROM public.spotify_history_extended
+WHERE ms_played > 0
+  AND BTRIM(track_name) <> ''
+  AND BTRIM(artist_name) <> ''
+GROUP BY LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g'))
+ORDER BY COUNT(*) DESC, LOWER(REGEXP_REPLACE(BTRIM(artist_name), '[[:space:]]+', ' ', 'g')) ASC
+LIMIT 5;
+
+-- 11. REPRODUCCIONES VÁLIDAS DE LOS ÚLTIMOS 30 DÍAS
+CREATE OR REPLACE VIEW public.view_plays_last_30_days
+WITH (security_invoker = false)
+AS
+SELECT
+    COUNT(*)::INT AS total_plays
+FROM public.spotify_history_extended
+WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
+  AND played_at <= CURRENT_TIMESTAMP
+  AND ms_played > 0
+  AND BTRIM(track_name) <> '';
+
+-- 12. SOLO LAS VISTAS NECESARIAS SON PÚBLICAS
 GRANT SELECT ON public.view_stats_general TO anon, authenticated;
 GRANT SELECT ON public.view_top_tracks_recent TO anon, authenticated;
 GRANT SELECT ON public.view_top_albums_recent TO anon, authenticated;
 GRANT SELECT ON public.view_top_tracks_all_time TO anon, authenticated;
 GRANT SELECT ON public.view_top_albums_all_time TO anon, authenticated;
 GRANT SELECT ON public.view_recent_plays TO anon, authenticated;
+GRANT SELECT ON public.view_top_artists_month TO anon, authenticated;
+GRANT SELECT ON public.view_top_artists_year TO anon, authenticated;
+GRANT SELECT ON public.view_top_artists_all_time TO anon, authenticated;
+GRANT SELECT ON public.view_plays_last_30_days TO anon, authenticated;
 
--- 11. COMPROBACIONES
+-- 13. COMPROBACIONES
 SELECT
     'spotify_history_extended' AS objeto,
     COUNT(*) AS registros
@@ -228,9 +299,17 @@ SELECT 'view_top_tracks_all_time', COUNT(*) FROM public.view_top_tracks_all_time
 UNION ALL
 SELECT 'view_top_albums_all_time', COUNT(*) FROM public.view_top_albums_all_time
 UNION ALL
-SELECT 'view_recent_plays', COUNT(*) FROM public.view_recent_plays;
+SELECT 'view_recent_plays', COUNT(*) FROM public.view_recent_plays
+UNION ALL
+SELECT 'view_top_artists_month', COUNT(*) FROM public.view_top_artists_month
+UNION ALL
+SELECT 'view_top_artists_year', COUNT(*) FROM public.view_top_artists_year
+UNION ALL
+SELECT 'view_top_artists_all_time', COUNT(*) FROM public.view_top_artists_all_time
+UNION ALL
+SELECT 'view_plays_last_30_days', COUNT(*) FROM public.view_plays_last_30_days;
 
--- 12. COMPROBAR QUE LA RESTRICCIÓN ANTIGUA NO QUEDÓ
+-- 14. COMPROBAR QUE LA RESTRICCIÓN ANTIGUA NO QUEDÓ
 SELECT
     indexname
 FROM pg_indexes
