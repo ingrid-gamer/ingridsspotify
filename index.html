@@ -344,24 +344,48 @@ async function queryDeezerStrict(artist, title) {
 }
 async function queryDeezerArtistImage(artistName) {
     const cacheKey = normalizeText(artistName);
-    if (artistImageCache.has(cacheKey)) return artistImageCache.get(cacheKey);
+
+    if (!cacheKey) {
+        return null;
+    }
+
+    if (artistImageCache.has(cacheKey)) {
+        return artistImageCache.get(cacheKey);
+    }
 
     try {
-        const apiUrl = `https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=10`;
+        const params = new URLSearchParams({
+            select: 'image_url',
+            artist_key: `eq.${cacheKey}`,
+            limit: '1'
+        });
+
         const data = await fetchJson(
-            `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`,
-            {},
-            9000
+            `${SUPABASE_URL}/rest/v1/artist_image_cache?${params.toString()}`,
+            {
+                headers: {
+                    apikey: SUPABASE_PUBLISHABLE_KEY,
+                    Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+                }
+            },
+            8000
         );
-        const artist = (Array.isArray(data?.data) ? data.data : [])
-            .find(item => normalizeText(item?.name) === cacheKey);
-        const image = artist?.picture_xl || artist?.picture_big || artist?.picture_medium || null;
-        const safeImage = typeof image === 'string' && /^https:\/\//i.test(image) ? image : null;
-        artistImageCache.set(cacheKey, safeImage);
-        return safeImage;
+
+        const imageUrl =
+            Array.isArray(data) &&
+            typeof data[0]?.image_url === 'string' &&
+            /^https?:\/\//i.test(data[0].image_url)
+                ? data[0].image_url
+                : null;
+
+        artistImageCache.set(cacheKey, imageUrl);
+        return imageUrl;
     } catch (error) {
-        console.warn(`Deezer no pudo resolver la imagen de ${artistName}:`, error.message);
-        artistImageCache.set(cacheKey, null);
+        console.error(
+            `No se pudo cargar la imagen de ${artistName}:`,
+            error
+        );
+
         return null;
     }
 }
