@@ -8,7 +8,8 @@
     "sync": "node sync-spotify.js",
     "covers": "node enrich-metadata.js",
     "auth": "node impor-history/spotify-auth.js",
-    "check": "node check-env.js"
+    "check": "node check-env.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

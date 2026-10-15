@@ -913,6 +913,153 @@ async function enrichWithSpotify(
     return result;
 }
 
+async function searchSpotifyAlbum(token, albumName, artistName) {
+    const params = new URLSearchParams({
+        q: `album:${albumName} artist:${artistName}`,
+        type: 'album',
+        limit: '10',
+        market: SPOTIFY_MARKET
+    });
+
+    const data = await fetchJson(
+        `https://api.spotify.com/v1/search?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const albums = data?.albums?.items || [];
+    const albumKey = normalizeText(albumName);
+    const artistKey = normalizeText(artistName);
+
+    const ranked = albums.map(album => {
+        const name = normalizeText(album.name);
+        const artists = (album.artists || [])
+            .map(artist => normalizeText(artist.name));
+
+        let score = 0;
+        if (name === albumKey) score += 10;
+        else if (name.includes(albumKey) || albumKey.includes(name)) score += 4;
+
+        if (artists.includes(artistKey)) score += 10;
+        else if (artists.some(a => a.includes(artistKey) || artistKey.includes(a))) score += 4;
+
+        return { album, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const best = ranked[0];
+
+    if (!best || best.score < 20) return null;
+
+    return {
+        albumCover: best.album.images?.[0]?.url || null,
+        albumUri: best.album.uri || null
+    };
+}
+
+async function searchItunesAlbumCover(albumName, artistName) {
+    const params = new URLSearchParams({
+        term: `${albumName} ${artistName}`,
+        country: 'CL',
+        entity: 'album',
+        limit: '10'
+    });
+
+    const data = await fetchJson(
+        `https://itunes.apple.com/search?${params}`,
+        {},
+        15000
+    );
+
+    const albumKey = normalizeText(albumName);
+    const artistKey = normalizeText(artistName);
+
+    const ranked = (data.results || []).map(item => {
+        const name = normalizeText(item.collectionName);
+        const artist = normalizeText(item.artistName);
+
+        let score = 0;
+        if (name === albumKey) score += 10;
+        else if (name.includes(albumKey) || albumKey.includes(name)) score += 4;
+
+        if (artist === artistKey) score += 10;
+        else if (artist.includes(artistKey) || artistKey.includes(artist)) score += 4;
+
+        return { item, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const best = ranked[0];
+
+    if (!best || best.score < 20 || !best.item.artworkUrl100) {
+        return null;
+    }
+
+    return {
+        albumCover: toLargeItunesArtwork(best.item.artworkUrl100),
+        albumUri: null
+    };
+}
+
+async function enrichTopAlbums(token) {
+    const { data: albums, error } = await supabase
+        .from('view_top_albums_all_time')
+        .select('album_name, artist_name, album_cover')
+        .limit(5);
+
+    if (error) throw new Error(`Error leyendo top álbumes: ${error.message}`);
+
+    for (const album of albums || []) {
+        if (album.album_cover) {
+            console.log(`Ya tiene portada: ${album.album_name}`);
+            continue;
+        }
+
+        let metadata = null;
+
+        try {
+            metadata = await searchSpotifyAlbum(
+                token, album.album_name, album.artist_name
+            );
+        } catch (error) {
+            console.warn(`Spotify: ${album.album_name}: ${error.message}`);
+        }
+
+        if (!metadata?.albumCover) {
+            try {
+                metadata = await searchItunesAlbumCover(
+                    album.album_name, album.artist_name
+                );
+            } catch (error) {
+                console.warn(`iTunes: ${album.album_name}: ${error.message}`);
+            }
+        }
+
+        if (!metadata?.albumCover) {
+            console.warn(`No se encontró portada: ${album.album_name}`);
+            continue;
+        }
+
+        const update = {
+            album_cover: metadata.albumCover
+        };
+
+        if (metadata.albumUri) {
+            update.spotify_album_uri = metadata.albumUri;
+        }
+
+        const { error: updateError, count } = await supabase
+            .from('spotify_history_extended')
+            .update(update, { count: 'exact' })
+            .eq('album_name', album.album_name)
+            .eq('artist_name', album.artist_name)
+            .or('album_cover.is.null,album_cover.eq.""');
+
+        if (updateError) {
+            console.error(`Error guardando ${album.album_name}: ${updateError.message}`);
+        } else {
+            console.log(`Portada guardada: ${album.album_name} — ${album.artist_name}; filas actualizadas: ${count ?? 'confirmadas'}`);
+        }
+    }
+}
+
 async function main() {
 
     console.log(
@@ -927,11 +1074,11 @@ async function main() {
         '=============================================='
     );
 
-    const token =
-        await getSpotifyToken();
+    const token = await getSpotifyToken();
 
-    const pending =
-        await getMissingCoverRows();
+    await enrichTopAlbums(token);
+
+    const pending = await getMissingCoverRows();
 
     console.log(
         `🔎 Canciones únicas sin portada: ${pending.length}`
