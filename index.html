@@ -437,6 +437,27 @@ async function queryView(viewName) {
     if (!Array.isArray(data)) throw new Error(`${viewName}: la respuesta no es una lista válida.`);
     return data;
 }
+async function queryTable(tableName, query) {
+    validateFrontendConfig();
+
+    const endpoint =
+        `${SUPABASE_URL}/rest/v1/${encodeURIComponent(tableName)}?${query}`;
+
+    const data = await fetchJson(endpoint, {
+        method: 'GET',
+        headers: {
+            apikey: SUPABASE_PUBLISHABLE_KEY,
+            Accept: 'application/json'
+        },
+        cache: 'no-store'
+    });
+
+    if (!Array.isArray(data)) {
+        throw new Error(`${tableName}: la respuesta no es una lista válida.`);
+    }
+
+    return data;
+}
 const statsSections = [
     {
         id: 'top-canciones-90',
@@ -571,7 +592,10 @@ async function cargarRecientes() {
     const container = document.getElementById('container-recientes');
     const firstLoad = !container?.dataset.loaded;
     try {
-        const rows = sortRecentPlays(await queryView('view_recent_plays')).slice(0, RECENT_INITIAL_COUNT + RECENT_MORE_COUNT);
+        const rows = await queryTable(
+            'spotify_history_extended',
+            'select=id,track_name,artist_name,album_name,album_cover,spotify_track_uri,played_at,ms_played&ms_played=gt.0&track_name=not.is.null&artist_name=not.is.null&order=played_at.desc,id.desc&limit=15'
+        );
         const fingerprint = JSON.stringify(rows);
         recentRows = rows;
         if (fingerprint !== recentRowsFingerprint) {
@@ -586,10 +610,17 @@ async function cargarRecientes() {
 }
 async function cargarEstadisticas() {
     try {
-        const stats = await queryView('view_stats_general');
-        if (stats.length) {
-            document.getElementById('stat-reproducciones').innerText = formatNumber(stats[0].total_plays);
-            document.getElementById('stat-artistas').innerText = formatNumber(stats[0].total_artistas);
+        const stats = await queryTable(
+            'spotify_stats_cache',
+            'select=total_plays,total_artistas&id=eq.1'
+        );
+
+        if (stats.length > 0) {
+            document.getElementById('stat-reproducciones').innerText =
+                formatNumber(stats[0].total_plays);
+
+            document.getElementById('stat-artistas').innerText =
+                formatNumber(stats[0].total_artistas);
         }
     } catch (error) {
         console.error('Error al cargar estadísticas de Supabase:', error);
