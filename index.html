@@ -493,11 +493,20 @@ function renderTrackList(containerId, rows, showPlays = false) {
         ["Template", "Paul Laurens"]
     ];
 
+    const normalizeTrackText = value =>
+        String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+
     rows = Array.isArray(rows)
-        ? rows.filter(song => !excludedTracks.some(([track, artist]) =>
-            (song.track_name || "").trim().toLowerCase() === track.toLowerCase() &&
-            (song.artist_name || "").trim().toLowerCase() === artist.toLowerCase()
-        ))
+        ? rows.filter(row => {
+            return !excludedTracks.some(([title, artist]) =>
+                normalizeTrackText(row.track_name) === normalizeTrackText(title) &&
+                normalizeTrackText(row.artist_name) === normalizeTrackText(artist)
+            );
+        })
         : rows;
 
     const container = document.getElementById(containerId);
@@ -532,7 +541,22 @@ function renderTrackList(containerId, rows, showPlays = false) {
 function renderAlbumList(containerId, rows) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    if (!Array.isArray(rows) || rows.length === 0) { container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>'; return; }
+    const normalizeAlbumText = value =>
+        String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+
+    rows = Array.isArray(rows)
+        ? rows.filter(row => !(
+            normalizeAlbumText(row.album_name) === 'sounds from the past i' &&
+            normalizeAlbumText(row.artist_name) === 'lars huismann'
+        ))
+        : [];
+
+    rows = rows.slice(0, 5);
+    if (rows.length === 0) { container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>'; return; }
     container.innerHTML = rows.map((row, index) => {
         const rawAlbum = row.album_name || 'Álbum desconocido';
         const album = escapeHTML(rawAlbum), artistRaw = row.artist_name || 'Artista desconocido';
