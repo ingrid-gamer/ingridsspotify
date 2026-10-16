@@ -480,34 +480,42 @@ function imageAttributes(id, cover, artist, title, spotifyValue, isAlbum) {
     const usableCover = cover && typeof cover === 'string' ? cover : DEFAULT_COVER;
     return `id="${escapeHTML(id)}" src="${escapeHTML(usableCover)}" data-saved-cover="${escapeHTML(usableCover)}" data-artist="${escapeHTML(artist || '')}" data-title="${escapeHTML(title || '')}" data-spotify="${escapeHTML(spotifyValue || '')}" data-kind="${isAlbum ? 'album' : 'track'}" alt="Portada" onerror="handleCoverError(this)"`;
 }
+const CANCIONES_EXCLUIDAS = [
+    { track: "imosia", artist: "nobel cortex" },
+    { track: "that's right", artist: "bailey ibbs" },
+    { track: "climax", artist: "dj dextro" },
+    { track: "prophat tool board", artist: "glaskin" },
+    { track: "mint gummies", artist: "ikari" },
+    { track: "echo", artist: "lars huismann" },
+    { track: "sounds from the past i", artist: "lars huismann" },
+    { track: "oxytocin", artist: "disguised" },
+    { track: "template", artist: "paul laurens" }
+];
+
+function normalizarTexto(texto) {
+    return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+function esCancionExcluida(nombre, artista) {
+    const track = normalizarTexto(nombre);
+    const artists = normalizarTexto(artista)
+        .split(/\s*,\s*|\s*&\s*|\s+feat\.?\s+/);
+
+    return CANCIONES_EXCLUIDAS.some(cancion =>
+        track === cancion.track &&
+        artists.some(a => a === cancion.artist)
+    );
+}
+
 function renderTrackList(containerId, rows, showPlays = false) {
-    const excludedTracks = [
-        ["Imosia", "Nobel Cortex, BCCO"],
-        ["That's Right", "Bailey Ibbs"],
-        ["Climax", "DJ Dextro"],
-        ["Prophat Tool Board", "Glaskin"],
-        ["Mint Gummies", "Ikari"],
-        ["Echo", "Lars Huismann"],
-        ["Sounds from the Past I", "Lars Huismann"],
-        ["Oxytocin", "Disguised"],
-        ["Template", "Paul Laurens"]
-    ];
-
-    const normalizeTrackText = value =>
-        String(value || '')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim()
-            .toLowerCase();
-
     rows = Array.isArray(rows)
-        ? rows.filter(row => {
-            return !excludedTracks.some(([title, artist]) =>
-                normalizeTrackText(row.track_name) === normalizeTrackText(title) &&
-                normalizeTrackText(row.artist_name) === normalizeTrackText(artist)
-            );
-        })
-        : rows;
+        ? rows.filter(row => !esCancionExcluida(row.track_name, row.artist_name))
+        : [];
 
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -541,21 +549,7 @@ function renderTrackList(containerId, rows, showPlays = false) {
 function renderAlbumList(containerId, rows) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    const normalizeAlbumText = value =>
-        String(value || '')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim()
-            .toLowerCase();
-
-    rows = Array.isArray(rows)
-        ? rows.filter(row => !(
-            normalizeAlbumText(row.album_name) === 'sounds from the past i' &&
-            normalizeAlbumText(row.artist_name) === 'lars huismann'
-        ))
-        : [];
-
-    rows = rows.slice(0, 5);
+    rows = Array.isArray(rows) ? rows.slice(0, 5) : [];
     if (rows.length === 0) { container.innerHTML = '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>'; return; }
     container.innerHTML = rows.map((row, index) => {
         const rawAlbum = row.album_name || 'Álbum desconocido';
