@@ -83,6 +83,63 @@ FROM public.spotify_history_extended
 WHERE ms_played > 0
   AND BTRIM(track_name) <> '';
 
+-- Normalize track and artist text so exclusions handle case, accents,
+-- whitespace, and multiple credited artists consistently.
+CREATE OR REPLACE FUNCTION public.normalize_spotify_text(input_text TEXT)
+RETURNS TEXT
+LANGUAGE SQL
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+    SELECT LOWER(
+        REGEXP_REPLACE(
+            BTRIM(
+                REGEXP_REPLACE(
+                    NORMALIZE(COALESCE(input_text, ''), NFD),
+                    U&'[\0300-\036F]',
+                    '',
+                    'g'
+                )
+            ),
+            '[[:space:]]+',
+            ' ',
+            'g'
+        )
+    );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_excluded_spotify_track(
+    input_track TEXT,
+    input_artist TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE SQL
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM (VALUES
+            ('imosia', 'nobel cortex'),
+            ('that''s right', 'bailey ibbs'),
+            ('climax', 'dj dextro'),
+            ('prophat tool board', 'glaskin'),
+            ('mint gummies', 'ikari'),
+            ('echo', 'lars huismann'),
+            ('sounds from the past i', 'lars huismann'),
+            ('oxytocin', 'disguised'),
+            ('template', 'paul laurens')
+        ) AS excluded(track_name, artist_name)
+        WHERE public.normalize_spotify_text(input_track) = excluded.track_name
+          AND excluded.artist_name = ANY(
+              REGEXP_SPLIT_TO_ARRAY(
+                  public.normalize_spotify_text(input_artist),
+                  '\s*,\s*|\s*&\s*|\s+feat\.?\s+'
+              )
+          )
+    );
+$$;
+
 -- 5. TOP 10 CANCIONES - ÚLTIMOS 30 DÍAS
 CREATE OR REPLACE VIEW public.view_top_tracks_recent
 WITH (security_invoker = false)
@@ -103,6 +160,7 @@ WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
   AND ms_played > 0
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''
+  AND NOT public.is_excluded_spotify_track(track_name, artist_name)
 GROUP BY track_name, artist_name
 ORDER BY veces_reproducidas DESC, track_name ASC, artist_name ASC
 LIMIT 10;
@@ -133,6 +191,7 @@ WHERE played_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''
   AND BTRIM(COALESCE(album_name, '')) <> ''
+  AND NOT public.is_excluded_spotify_track(track_name, artist_name)
 GROUP BY BTRIM(album_name), artist_name
 ORDER BY veces_reproducidas DESC, album_name ASC, artist_name ASC
 LIMIT 5;
@@ -156,6 +215,7 @@ FROM public.spotify_history_extended
 WHERE ms_played > 0
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''
+  AND NOT public.is_excluded_spotify_track(track_name, artist_name)
 GROUP BY track_name, artist_name
 HAVING COUNT(*) >= 50
 ORDER BY veces_reproducidas DESC, track_name ASC, artist_name ASC
@@ -180,6 +240,7 @@ WHERE ms_played > 0
   AND BTRIM(track_name) <> ''
   AND BTRIM(artist_name) <> ''
   AND BTRIM(COALESCE(album_name, '')) <> ''
+  AND NOT public.is_excluded_spotify_track(track_name, artist_name)
 GROUP BY BTRIM(album_name), artist_name
 ORDER BY veces_reproducidas DESC, album_name ASC, artist_name ASC
 LIMIT 5;

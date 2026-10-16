@@ -137,7 +137,7 @@ IMPORT_BATCH_SIZE=500
 
 ### 4. Configurar la base de datos
 
-Ejecuta `supabase-setup.sql` en el **SQL Editor de Supabase**. Crea la tabla, los índices, las vistas públicas y los permisos correctos.
+Ejecuta `supabase-setup.sql` en el **SQL Editor de Supabase**. Crea la tabla, los índices, las vistas públicas y los permisos correctos. Las vistas de canciones y álbumes excluyen los temas configurados antes de calcular los rankings; vuelve a ejecutar el script en Supabase después de actualizarlo para aplicar esos cambios.
 
 ---
 
